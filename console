@@ -1,0 +1,24 @@
+#!/usr/bin/env php
+<?php
+require_once __DIR__.'/vendor/autoload.php';
+
+use App\Command\MakeCommand;
+use App\Command\makeController;
+use App\Command\makeModel;
+use App\Command\migration;
+use Symfony\Component\Console\Application;
+
+$commands = [
+    new makeController,
+    new MakeCommand,
+    new makeModel,
+    new migration,
+];
+
+
+
+$application = new Application();
+// Register your commands here
+
+$application->addCommands($commands);
+$application->run();
