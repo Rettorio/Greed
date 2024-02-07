@@ -2,6 +2,7 @@
 
 use App\Controller\AuthController;
 use Core\Router;
+use Core\View;
 
 $paramRules = [
     "id" => "numeric",
@@ -9,11 +10,11 @@ $paramRules = [
 
 $router = new Router($paramRules);
 
-$router->get("/test/{name}", function($name) {
-    echo "<br>Hello nama saya $name";
+$router->get("/", function() {
+    View::render('welcome', [], false);
 });
 
-$router->get("/login", [AuthController::class, "Lo  ginPage"]);
+$router->get("/login", [AuthController::class, "LoginPage"]);
 $router->get("/register", [AuthController::class, "RegisterPage"]);
 $router->get("/logout", [AuthController::class, "Logout"]);
 
