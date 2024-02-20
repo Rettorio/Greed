@@ -2,11 +2,11 @@
 
 namespace Core;
 
-use Config\Database;
 use PDO;
 use PDOException;
 
-Class Model {
+class Model
+{
     protected $table;
     protected $primaryKey;
     protected $foreignKey;
@@ -15,14 +15,20 @@ Class Model {
     //pdo instance
     static $db = null;
     private $query = "";
-
+    private $host;
+    private $database;
 
 
     public function __construct()
     {
-        if(is_null(static::$db)) {
-            $conf = Database::DB_MS.':host='.Database::DB_HOST.';dbname='.Database::DB_NAME;
-            $db = new PDO($conf, Database::DB_USER, Database::DB_PASSWORD);
+        $this->host = $_ENV['DB_HOST'];
+        $this->database = $_ENV['DB_NAME'];
+        $dbms = $_ENV['DB_DRIVER'];
+        $user = $_ENV['DB_USERNAME'];
+        $pass = $_ENV['DB_PASSWORD'];
+        if (is_null(static::$db)) {
+            $conf = $dbms . ':host=' . $this->host . ';dbname=' . $this->database;
+            $db = new PDO($conf, $user, $pass);
 
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             static::$db = $db;
@@ -32,41 +38,40 @@ Class Model {
     public static function __callStatic($name, $arguments)
     {
         $obj = new self;
-        $actualName = $name[0].substr($name, 1);
+        $actualName = $name[0] . substr($name, 1);
         var_dump($actualName);
-        if(method_exists($obj, $actualName)) {
+        if (method_exists($obj, $actualName)) {
             call_user_func_array("$obj->$actualName", $arguments);
         }
     }
 
     public function __set($name, $value)
     {
-        if(array_search($name, $this->fillable) !== false) {
+        if (array_search($name, $this->fillable) !== false) {
             $this->fill[$name] = $value;
         }
     }
 
-    protected function getTableName() :string
+    protected function getTableName(): string
     {
         return $this->table;
     }
 
-    protected function getPrimaryKey() :string
+    protected function getPrimaryKey(): string
     {
         return $this->primaryKey;
     }
 
     public function Save()
     {
-        if(!empty($this->fill))
-        {
+        if (!empty($this->fill)) {
             $this->Insert($this->fill);
             return true;
         }
         return false;
     }
 
-    public function getAll(string $additional = "") :iterable
+    public function getAll(string $additional = ""): iterable
     {
         $base = "SELECT * FROM $this->table $additional";
         try {
@@ -92,8 +97,8 @@ Class Model {
     {
         $columns = implode(',', array_keys($data));
         $values = '';
-        foreach(array_values($data) as $value) {
-            if(gettype($value) === "string") {
+        foreach (array_values($data) as $value) {
+            if (gettype($value) === "string") {
                 $values .= "'{$value}',";
             } else {
                 $values .= "$value,";
@@ -104,7 +109,7 @@ Class Model {
             $sql = "INSERT INTO $this->table ($columns) VALUES ($values)";
             $insert = $this->DB()->prepare($sql);
             $insert->execute();
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             throw $e;
         }
     }
@@ -112,7 +117,7 @@ Class Model {
     public function update(array $data, int $id)
     {
         $set = "";
-        foreach($data as $key => $val) {
+        foreach ($data as $key => $val) {
             $set .= "$key = '$val',";
         }
         $set = rtrim($set, ",");
@@ -140,26 +145,25 @@ Class Model {
 
     public function select($columns = [])
     {
-        if(empty($columns)) { $cols = "*"; } else {$cols = implode(",", $columns);}
-        $this->query .= "SELECT $cols FROM  $this->table "; 
+        if (empty($columns)) {
+            $cols = "*";
+        } else {
+            $cols = implode(",", $columns);
+        }
+        $this->query .= "SELECT $cols FROM  $this->table ";
         return $this;
     }
 
     public function where($column, $operator, $value)
     {
         $operators = [
-            '=',
-            '>',
-            '<',
-            '>=',
-            '<=',
-            '<>',
+            '=', '!=', '>', '<', '>=', '<=', '<>',
             'BETWEEN',
             'LIKE',
             'IN'
         ];
-        if(in_array($operator, $operators)) {
-            $this->query .= strpos($this->query, "WHERE") ? "AND $column $operator '$value'" : "WHERE $column $operator '$value'"; 
+        if (in_array($operator, $operators)) {
+            $this->query .= strpos($this->query, "WHERE") ? "AND $column $operator '$value'" : "WHERE $column $operator '$value'";
         }
         return $this;
     }
@@ -173,7 +177,6 @@ Class Model {
         } catch (PDOException $e) {
             throw $e;
         }
-    
     }
 
     public function getFirst()
@@ -199,7 +202,8 @@ Class Model {
         return $this;
     }
 
-    public function DB() :PDO {
+    public function DB(): PDO
+    {
         return static::$db;
     }
 }
