@@ -2,28 +2,28 @@
 
 namespace Core\Migrate;
 
-use Config\Database;
 use PDO;
 use PDOException;
 
-Class Scheme {
-    static private function DB() :PDO
+class Scheme
+{
+    static private function DB(): PDO
     {
-        $pre = Database::DB_MS.':host='.Database::DB_HOST.';dbname='.Database::DB_NAME;
-        $con = new PDO($pre, Database::DB_USER, Database::DB_PASSWORD);
+        $pre = $_ENV['DB_DRIVER'] . ':host=' . $_ENV['DB_HOST'] . ';dbname=' . $_ENV['DB_NAME'];
+        $con = new PDO($pre, $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
 
         $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         return $con;
     }
 
-    static public function create(string $tableName, callable $addChanges) :void
+    static public function create(string $tableName, callable $addChanges): void
     {
         $table = new SchemeBuilder($tableName);
         $table->tableName = $tableName;
         $addChanges($table);
         $query = $table->build();
-        
-        if(self::DB()->exec($query) === false) {
+
+        if (self::DB()->exec($query) === false) {
             throw new PDOException("Something off... [$query]");
         }
     }
